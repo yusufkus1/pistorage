@@ -7,8 +7,8 @@ services:
       - pistorage_data:/data/storage
     environment:
       PORT: 3001
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET gerekli — .env dosyasını oluşturun}
-      PASSWORD_HASH: ${PASSWORD_HASH:?PASSWORD_HASH gerekli — docker compose run --rm setup-password ile oluşturun}
+      JWT_SECRET: ${JWT_SECRET}
+      PASSWORD_HASH: ${PASSWORD_HASH}
       STORAGE_ROOT: /data/storage
     restart: unless-stopped
 
