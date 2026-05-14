@@ -1,0 +1,16 @@
+services:
+  pistorage:
+    image: ghcr.io/yusufkus1/pistorage:latest
+    ports:
+      - "${PORT:-3001}:3001"
+    volumes:
+      - pistorage_data:/data/storage
+    environment:
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET gerekli — .env dosyasını oluşturun}
+      PASSWORD_HASH: ${PASSWORD_HASH:?PASSWORD_HASH gerekli — node backend/setup-password.js ile oluşturun}
+      STORAGE_ROOT: /data/storage
+    restart: unless-stopped
+
+volumes:
+  pistorage_data:
