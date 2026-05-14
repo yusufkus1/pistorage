@@ -44,18 +44,10 @@ export default function FileManager() {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    loadFiles(currentPath);
-  }, [currentPath, loadFiles]);
+  useEffect(() => { loadFiles(currentPath); }, [currentPath, loadFiles]);
+  useEffect(() => { loadRootFolders(); }, [loadRootFolders]);
 
-  useEffect(() => {
-    loadRootFolders();
-  }, [loadRootFolders]);
-
-  const reload = () => {
-    loadFiles(currentPath);
-    loadRootFolders();
-  };
+  const reload = () => { loadFiles(currentPath); loadRootFolders(); };
 
   const handleUpload = async (uploadPath, fileList) => {
     const arr = Array.from(fileList);
@@ -111,46 +103,40 @@ export default function FileManager() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-slate-800 text-white px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <span className="text-2xl">🗄️</span>
-          <span className="font-bold text-lg tracking-tight">Pi Storage</span>
-        </div>
+    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
+      {/* Top bar */}
+      <header className="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between flex-shrink-0 z-10">
+        <Breadcrumb path={currentPath} onNavigate={setCurrentPath} />
         <div className="flex items-center gap-2">
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
-          >
-            ⬆️ Yükle
-          </button>
-          <button
             onClick={() => { setShowMkdir(true); setNewFolderName(''); }}
-            className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
           >
-            + Klasör
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Klasör
           </button>
           <button
-            onClick={logout}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-sm"
           >
-            Çıkış
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Yükle
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={e => { handleUpload(currentPath, e.target.files); e.target.value = ''; }}
+          />
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={e => { handleUpload(currentPath, e.target.files); e.target.value = ''; }}
-        />
       </header>
-
-      {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2 flex-shrink-0">
-        <Breadcrumb path={currentPath} onNavigate={setCurrentPath} />
-      </div>
 
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
@@ -161,6 +147,7 @@ export default function FileManager() {
           draggingItem={draggingItem}
           onMove={handleMove}
           onUpload={handleUpload}
+          onLogout={logout}
         />
         <FileGrid
           files={files}
@@ -177,33 +164,33 @@ export default function FileManager() {
         />
       </div>
 
-      {/* Create Folder Modal */}
+      {/* New folder modal */}
       {showMkdir && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={e => e.target === e.currentTarget && setShowMkdir(false)}
         >
-          <div className="bg-white rounded-2xl p-6 w-80 shadow-2xl">
-            <h3 className="font-semibold text-slate-800 mb-4">Yeni Klasör</h3>
+          <div className="bg-white rounded-2xl p-6 w-80 shadow-xl border border-slate-200">
+            <h3 className="font-semibold text-slate-900 mb-4">Yeni Klasör</h3>
             <input
               type="text"
               value={newFolderName}
               onChange={e => setNewFolderName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleMkdir()}
+              onKeyDown={e => { if (e.key === 'Enter') handleMkdir(); if (e.key === 'Escape') setShowMkdir(false); }}
               placeholder="Klasör adı"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              className="w-full px-3.5 py-2.5 border border-slate-200 bg-slate-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm mb-4 transition-all"
               autoFocus
             />
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowMkdir(false)}
-                className="px-4 py-2 text-slate-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors font-medium"
               >
                 İptal
               </button>
               <button
                 onClick={handleMkdir}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
               >
                 Oluştur
               </button>
@@ -214,11 +201,20 @@ export default function FileManager() {
 
       {/* Toast */}
       {toast && (
-        <div
-          className={`fixed bottom-5 right-5 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium z-50 transition-all ${
-            toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-500'
-          }`}
-        >
+        <div className={`fixed bottom-5 right-5 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium z-50 border ${
+          toast.type === 'error'
+            ? 'bg-white text-red-600 border-red-200 shadow-red-100'
+            : 'bg-white text-emerald-700 border-emerald-200 shadow-emerald-100'
+        }`}>
+          {toast.type === 'error' ? (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 11a1 1 0 110-2 1 1 0 010 2zm0-8a1 1 0 011 1v3a1 1 0 11-2 0V5a1 1 0 011-1z"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.78 5.78l-4.5 4.5a.75.75 0 01-1.06 0l-2-2a.75.75 0 111.06-1.06l1.47 1.47 3.97-3.97a.75.75 0 111.06 1.06z"/>
+            </svg>
+          )}
           {toast.msg}
         </div>
       )}

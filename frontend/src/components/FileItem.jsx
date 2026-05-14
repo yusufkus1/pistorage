@@ -1,19 +1,25 @@
 import { useState } from 'react';
 
-function getIcon(name, isDirectory) {
-  if (isDirectory) return '📁';
+function getTypeStyle(name, isDirectory) {
+  if (isDirectory) return { bg: '#FEF9C3', color: '#CA8A04', label: 'KLS' };
   const ext = name.split('.').pop().toLowerCase();
-  const map = {
-    jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', webp: '🖼️', svg: '🖼️', bmp: '🖼️', heic: '🖼️',
-    mp4: '🎬', mkv: '🎬', avi: '🎬', mov: '🎬', wmv: '🎬', flv: '🎬', webm: '🎬',
-    mp3: '🎵', wav: '🎵', flac: '🎵', aac: '🎵', ogg: '🎵', m4a: '🎵',
-    pdf: '📕', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊', ppt: '📑', pptx: '📑',
-    txt: '📄', md: '📄', csv: '📄',
-    zip: '📦', rar: '📦', tar: '📦', gz: '📦', '7z': '📦',
-    js: '💻', jsx: '💻', ts: '💻', tsx: '💻', py: '💻', go: '💻', rs: '💻', java: '💻',
-    html: '🌐', css: '🎨', json: '⚙️',
-  };
-  return map[ext] || '📄';
+  const label = ext.length > 4 ? ext.slice(0, 4).toUpperCase() : ext.toUpperCase();
+
+  if (['jpg','jpeg','png','gif','webp','svg','bmp','heic'].includes(ext))
+    return { bg: '#DCFCE7', color: '#16A34A', label };
+  if (['mp4','mkv','avi','mov','wmv','flv','webm'].includes(ext))
+    return { bg: '#EDE9FE', color: '#7C3AED', label };
+  if (['mp3','wav','flac','aac','ogg','m4a'].includes(ext))
+    return { bg: '#FCE7F3', color: '#DB2777', label };
+  if (['pdf'].includes(ext))
+    return { bg: '#FEE2E2', color: '#DC2626', label };
+  if (['zip','rar','tar','gz','7z'].includes(ext))
+    return { bg: '#FFEDD5', color: '#EA580C', label };
+  if (['js','jsx','ts','tsx','py','go','rs','java','html','css','json'].includes(ext))
+    return { bg: '#DBEAFE', color: '#2563EB', label };
+  if (['doc','docx','txt','md','csv','xls','xlsx','ppt','pptx'].includes(ext))
+    return { bg: '#E0F2FE', color: '#0284C7', label };
+  return { bg: '#F1F5F9', color: '#64748B', label };
 }
 
 function formatSize(bytes) {
@@ -24,38 +30,38 @@ function formatSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 86400000) return 'Bugün';
+  if (diff < 172800000) return 'Dün';
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+}
+
 export default function FileItem({ file, draggingItem, onNavigate, onMove, onDelete, onDownload, onUpload }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isHover, setIsHover] = useState(false);
+  const { bg, color, label } = getTypeStyle(file.name, file.isDirectory);
 
   const handleDragStart = (e) => {
     draggingItem.current = file.path;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', file.path);
   };
-
-  const handleDragEnd = () => {
-    draggingItem.current = null;
-  };
-
+  const handleDragEnd = () => { draggingItem.current = null; };
   const handleDragOver = (e) => {
     if (!file.isDirectory || draggingItem.current === file.path) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
   };
-
-  const handleDragLeave = (e) => {
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
+  const handleDragLeave = (e) => { e.stopPropagation(); setIsDragOver(false); };
   const handleDrop = (e) => {
     if (!file.isDirectory) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-
     if (e.dataTransfer.files.length > 0 && !draggingItem.current) {
       onUpload(file.path, e.dataTransfer.files);
     } else if (draggingItem.current && draggingItem.current !== file.path) {
@@ -75,46 +81,61 @@ export default function FileItem({ file, draggingItem, onNavigate, onMove, onDel
       onClick={() => file.isDirectory && onNavigate(file.path)}
       onMouseEnter={() => setIsHover(true)}
       onMouseLeave={() => setIsHover(false)}
-      className={`
-        relative rounded-xl p-3 flex flex-col items-center gap-1.5 select-none
-        transition-all duration-150 cursor-pointer
-        ${file.isDirectory ? 'hover:bg-amber-50' : 'hover:bg-blue-50'}
-        ${isDragOver ? 'bg-blue-100 ring-2 ring-blue-400 scale-105 shadow-md' : 'bg-white shadow-sm'}
-      `}
+      className={`flex items-center gap-3 px-4 py-2.5 select-none transition-colors duration-75 border-b border-slate-100 last:border-0 ${
+        file.isDirectory ? 'cursor-pointer' : 'cursor-default'
+      } ${isDragOver ? 'bg-indigo-50' : isHover ? 'bg-slate-50' : 'bg-white'}`}
     >
-      <div className="text-4xl pointer-events-none">{getIcon(file.name, file.isDirectory)}</div>
+      {/* Type badge */}
+      <div
+        className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-[10px] font-bold tracking-wide"
+        style={{ backgroundColor: bg, color }}
+      >
+        {label}
+      </div>
 
-      <p className="text-xs text-center text-slate-700 w-full truncate font-medium leading-tight">
-        {file.name}
-      </p>
+      {/* Name */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-slate-800 truncate">{file.name}</p>
+      </div>
 
-      {!file.isDirectory && (
-        <p className="text-xs text-slate-400">{formatSize(file.size)}</p>
-      )}
+      {/* Meta + Actions */}
+      <div className="flex items-center gap-4 flex-shrink-0">
+        {!file.isDirectory && (
+          <span className="text-xs text-slate-400 w-16 text-right tabular-nums">{formatSize(file.size)}</span>
+        )}
+        <span className="text-xs text-slate-400 w-12 text-right">{formatDate(file.modified)}</span>
 
-      {isHover && (
         <div
-          className="absolute top-1 right-1 flex gap-0.5"
+          className={`flex items-center gap-0.5 transition-opacity duration-100 ${isHover ? 'opacity-100' : 'opacity-0'}`}
           onClick={e => e.stopPropagation()}
         >
           {!file.isDirectory && (
             <button
               onClick={() => onDownload(file.path)}
               title="İndir"
-              className="p-1 bg-white rounded shadow text-base hover:bg-blue-50 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
             >
-              ⬇️
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
             </button>
           )}
           <button
             onClick={() => onDelete(file.path)}
             title="Sil"
-            className="p-1 bg-white rounded shadow text-base hover:bg-red-50 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
           >
-            🗑️
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+            </svg>
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -2,10 +2,10 @@ export default function Breadcrumb({ path, onNavigate }) {
   const parts = path ? path.split('/').filter(Boolean) : [];
 
   return (
-    <nav className="flex items-center gap-1 text-sm text-slate-600 overflow-x-auto whitespace-nowrap">
+    <nav className="flex items-center gap-1 text-sm overflow-x-auto whitespace-nowrap">
       <button
         onClick={() => onNavigate('')}
-        className="hover:text-blue-600 font-medium transition-colors"
+        className={`transition-colors ${parts.length === 0 ? 'text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-900'}`}
       >
         Ana Dizin
       </button>
@@ -14,10 +14,12 @@ export default function Breadcrumb({ path, onNavigate }) {
         const isLast = i === parts.length - 1;
         return (
           <span key={partPath} className="flex items-center gap-1">
-            <span className="text-slate-400">/</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 4 10 8 6 12"/>
+            </svg>
             <button
               onClick={() => onNavigate(partPath)}
-              className={`hover:text-blue-600 transition-colors ${isLast ? 'text-slate-800 font-semibold' : ''}`}
+              className={`transition-colors ${isLast ? 'text-slate-900 font-semibold' : 'text-slate-500 hover:text-slate-900'}`}
             >
               {part}
             </button>
