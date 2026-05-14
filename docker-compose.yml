@@ -8,9 +8,14 @@ services:
     environment:
       PORT: 3001
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET gerekli — .env dosyasını oluşturun}
-      PASSWORD_HASH: ${PASSWORD_HASH:?PASSWORD_HASH gerekli — node backend/setup-password.js ile oluşturun}
+      PASSWORD_HASH: ${PASSWORD_HASH:?PASSWORD_HASH gerekli — docker compose run --rm setup-password ile oluşturun}
       STORAGE_ROOT: /data/storage
     restart: unless-stopped
+
+  setup-password:
+    image: ghcr.io/yusufkus1/pistorage:latest
+    entrypoint: ["node", "/app/backend/setup-password.js"]
+    profiles: [tools]
 
 volumes:
   pistorage_data:
