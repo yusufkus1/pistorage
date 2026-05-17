@@ -22,6 +22,10 @@ const davAnon  = davUserManager.addUser('anon', '', false);
 const davPrivileges = new webdav.SimplePathPrivilegeManager();
 davPrivileges.setRights(davAdmin, '/', ['all']);
 
+// Auth sonucunu 60 sn cache'le — Pi 3'te her istekte bcrypt çalışmasın
+const authCache = new Map();
+const CACHE_TTL = 60000;
+
 class BcryptHTTPAuth {
   askForAuthentication() {
     return { 'WWW-Authenticate': 'Basic realm="Pi Storage"' };
@@ -31,8 +35,17 @@ class BcryptHTTPAuth {
     if (!header?.startsWith('Basic ')) return callback(null, davAnon);
     const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
     const password = decoded.slice(decoded.indexOf(':') + 1);
+
+    const cached = authCache.get(password);
+    if (cached && cached.expires > Date.now()) {
+      return callback(null, cached.valid ? davAdmin : davAnon);
+    }
+
     bcrypt.compare(password, process.env.PASSWORD_HASH || '')
-      .then(valid => callback(null, valid ? davAdmin : davAnon))
+      .then(valid => {
+        authCache.set(password, { valid, expires: Date.now() + CACHE_TTL });
+        callback(null, valid ? davAdmin : davAnon);
+      })
       .catch(() => callback(null, davAnon));
   }
 }
