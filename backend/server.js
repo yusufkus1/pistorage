@@ -75,6 +75,12 @@ app.use((req, res, next) => {
     if (name.toLowerCase() === 'content-length') return res;
     return origSetHeader(name, value);
   };
+  const origWriteHead = res.writeHead.bind(res);
+  res.writeHead = (status, reason, hdrs) => {
+    if (typeof reason === 'object') { hdrs = reason; reason = undefined; }
+    if (hdrs) { delete hdrs['content-length']; delete hdrs['Content-Length']; }
+    return reason ? origWriteHead(status, reason, hdrs || {}) : origWriteHead(status, hdrs || {});
+  };
 
   res.write = (chunk, enc, cb) => {
     if (typeof enc === 'function') { cb = enc; enc = 'utf8'; }
@@ -87,6 +93,7 @@ app.use((req, res, next) => {
     if (typeof enc === 'function') { cb = enc; enc = 'utf8'; }
     if (chunk?.length) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, enc || 'utf8'));
     res.setHeader = origSetHeader;
+    res.writeHead = origWriteHead;
     res.write = origWrite;
     res.end = origEnd;
     const raw = Buffer.concat(chunks);
