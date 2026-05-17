@@ -3,13 +3,17 @@ services:
     image: ghcr.io/yusufkus1/pistorage:latest
     ports:
       - "${PORT:-3001}:3001"
+      - "${HTTPS_PORT:-3443}:3443"
     volumes:
       - pistorage_data:/data/storage
+      - pistorage_certs:/data/certs
     environment:
       PORT: 3001
+      HTTPS_PORT: 3443
       JWT_SECRET: ${JWT_SECRET}
       PASSWORD_HASH: ${PASSWORD_HASH}
       STORAGE_ROOT: /data/storage
+      PI_IP: ${PI_IP}
     restart: unless-stopped
 
   setup-password:
@@ -19,3 +23,4 @@ services:
 
 volumes:
   pistorage_data:
+  pistorage_certs:
