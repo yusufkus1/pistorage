@@ -58,7 +58,41 @@ const davServer = new webdav.WebDAVServer({
 });
 davServer.setFileSystemSync('/', new webdav.PhysicalFileSystem(STORAGE_ROOT));
 
-app.use(webdav.extensions.express('/dav', davServer));
+// WebDAV middleware — HTTPS üzerinden gelince href'lerdeki http:// → https:// yap
+const davMiddleware = webdav.extensions.express('/dav', davServer);
+app.use((req, res, next) => {
+  if (!req.socket?.encrypted) return davMiddleware(req, res, next);
+
+  const host = req.headers.host || '';
+  const chunks = [];
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+
+  res.write = (chunk, enc, cb) => {
+    if (typeof enc === 'function') { cb = enc; enc = 'utf8'; }
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, enc || 'utf8'));
+    if (cb) cb();
+    return true;
+  };
+
+  res.end = (chunk, enc, cb) => {
+    if (typeof enc === 'function') { cb = enc; enc = 'utf8'; }
+    if (chunk?.length) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, enc || 'utf8'));
+    res.write = origWrite;
+    res.end = origEnd;
+    const raw = Buffer.concat(chunks);
+    const ct = res.getHeader('content-type') || '';
+    if (ct.includes('xml') && raw.length > 0) {
+      const fixed = raw.toString('utf8').replace(new RegExp(`http://${host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), `https://${host}`);
+      const buf = Buffer.from(fixed, 'utf8');
+      res.setHeader('content-length', buf.length);
+      return origEnd(buf, cb);
+    }
+    return origEnd(raw, cb);
+  };
+
+  davMiddleware(req, res, next);
+});
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
@@ -96,15 +130,11 @@ if (fs.existsSync(CERT_PATH) && fs.existsSync(KEY_PATH)) {
   });
 }
 
-// HTTP — /dav istekleri geçer (iOS href uyumu), diğerleri HTTPS'e yönlenir
+// HTTP → HTTPS redirect
 http.createServer((req, res) => {
-  if (req.url.startsWith('/dav')) {
-    app(req, res);
-  } else {
-    const host = req.headers.host?.split(':')[0] || '127.0.0.1';
-    res.writeHead(301, { Location: `https://${host}:${HTTPS_PORT}${req.url}` });
-    res.end();
-  }
+  const host = req.headers.host?.split(':')[0] || '127.0.0.1';
+  res.writeHead(301, { Location: `https://${host}:${HTTPS_PORT}${req.url}` });
+  res.end();
 }).listen(PORT, '0.0.0.0', () => {
-  console.log(`Pi Storage HTTP  → http://0.0.0.0:${PORT} (/dav açık, diğerleri HTTPS redirect)`);
+  console.log(`Pi Storage HTTP  → http://0.0.0.0:${PORT} (→ HTTPS redirect)`);
 });
