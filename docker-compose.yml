@@ -1,6 +1,7 @@
 services:
   pistorage:
     image: ghcr.io/yusufkus1/pistorage:latest
+    hostname: ${PI_HOSTNAME:-pistorage}
     ports:
       - "${PORT:-3001}:3001"
       - "${HTTPS_PORT:-3443}:3443"
