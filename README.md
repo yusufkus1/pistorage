@@ -50,6 +50,24 @@ docker compose up -d
 
 Tarayıcıdan `http://<cihaz-ip>:3001` adresine gir.
 
+## Ağ Diski Olarak Bağlama (WebDAV)
+
+Pi Storage, `/dav` yolundan WebDAV sunucu olarak da çalışır.
+
+**macOS Finder**
+1. Finder → Git → Sunucuya Bağlan (`Cmd+K`)
+2. `http://<pi-ip>:3001/dav` gir → Bağlan
+3. Kullanıcı adı: herhangi bir şey (örn. `pi`) — Şifre: Pi Storage şifren
+
+**iOS Files Uygulaması**
+1. Dosyalar → `...` → Depolama Alanı Ekle → WebDAV
+2. Sunucu: `http://<pi-ip>:3001/dav` — Kullanıcı Adı: `pi` — Şifre: Pi Storage şifren
+3. Artık herhangi bir uygulamadan "Paylaş → Dosyalara Kaydet → Pi Storage" diyebilirsin
+
+**Windows**
+1. Bu Bilgisayar → Ağ Konumu Ekle
+2. `http://<pi-ip>:3001/dav` gir
+
 ## Güncelleme
 
 ```bash
