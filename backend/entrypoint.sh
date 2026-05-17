@@ -10,7 +10,7 @@ if [ ! -f "$CERT_DIR/server.crt" ]; then
     echo "UYARI: PI_IP ayarlanmamış, sertifika sadece localhost için geçerli olacak."
     echo "       .env dosyasına PI_IP=<pi-ip-adresi> ekleyin ve container'ı yeniden başlatın."
   fi
-  HOSTNAME=$(hostname -s)
+  HOSTNAME="${PI_HOSTNAME:-$(hostname -s)}"
   echo "Sertifika oluşturuluyor: IP=$IP, hostname=${HOSTNAME}.local ..."
   openssl req -x509 -newkey rsa:2048 \
     -keyout "$CERT_DIR/server.key" \

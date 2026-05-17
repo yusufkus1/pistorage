@@ -15,6 +15,7 @@ services:
       PASSWORD_HASH: ${PASSWORD_HASH}
       STORAGE_ROOT: /data/storage
       PI_IP: ${PI_IP}
+      PI_HOSTNAME: ${PI_HOSTNAME:-pistorage}
     restart: unless-stopped
 
   setup-password:
