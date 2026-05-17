@@ -64,9 +64,17 @@ app.use((req, res, next) => {
   if (!req.socket?.encrypted) return davMiddleware(req, res, next);
 
   const host = req.headers.host || '';
+  const pattern = new RegExp(`http://${host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
   const chunks = [];
+  const origSetHeader = res.setHeader.bind(res);
   const origWrite = res.write.bind(res);
   const origEnd = res.end.bind(res);
+
+  // content-length'i drop et — body büyüyünce Node.js chunked encoding kullanır
+  res.setHeader = (name, value) => {
+    if (name.toLowerCase() === 'content-length') return res;
+    return origSetHeader(name, value);
+  };
 
   res.write = (chunk, enc, cb) => {
     if (typeof enc === 'function') { cb = enc; enc = 'utf8'; }
@@ -78,15 +86,14 @@ app.use((req, res, next) => {
   res.end = (chunk, enc, cb) => {
     if (typeof enc === 'function') { cb = enc; enc = 'utf8'; }
     if (chunk?.length) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, enc || 'utf8'));
+    res.setHeader = origSetHeader;
     res.write = origWrite;
     res.end = origEnd;
     const raw = Buffer.concat(chunks);
     const ct = res.getHeader('content-type') || '';
     if (ct.includes('xml') && raw.length > 0) {
-      const fixed = raw.toString('utf8').replace(new RegExp(`http://${host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g'), `https://${host}`);
-      const buf = Buffer.from(fixed, 'utf8');
-      res.setHeader('content-length', buf.length);
-      return origEnd(buf, cb);
+      const fixed = raw.toString('utf8').replace(pattern, `https://${host}`);
+      return origEnd(fixed, 'utf8', cb);
     }
     return origEnd(raw, cb);
   };
