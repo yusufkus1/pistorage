@@ -129,6 +129,7 @@ router.get('/download', (req, res) => {
   try {
     const filePath = safePath(req.query.path);
     if (req.query.inline) {
+      res.setHeader('Content-Disposition', 'inline');
       res.sendFile(filePath);
     } else {
       res.download(filePath);
