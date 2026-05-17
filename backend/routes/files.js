@@ -128,7 +128,11 @@ router.get('/download', (req, res) => {
   }
   try {
     const filePath = safePath(req.query.path);
-    res.download(filePath);
+    if (req.query.inline) {
+      res.sendFile(filePath);
+    } else {
+      res.download(filePath);
+    }
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

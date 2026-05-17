@@ -27,7 +27,7 @@ function TextPreview({ url }) {
 
 export default function PreviewModal({ file, onClose, onDownload }) {
   const token = localStorage.getItem('token');
-  const url = `/api/files/download?path=${encodeURIComponent(file.path)}&t=${token}`;
+  const url = `/api/files/download?path=${encodeURIComponent(file.path)}&t=${token}&inline=1`;
   const ext = file.name.split('.').pop().toLowerCase();
 
   let preview;
