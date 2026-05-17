@@ -96,15 +96,11 @@ if (fs.existsSync(CERT_PATH) && fs.existsSync(KEY_PATH)) {
   });
 }
 
-// HTTP — WebDAV geçer (iOS cert olmadan bağlanabilsin), diğerleri HTTPS'e
+// HTTP → HTTPS redirect
 http.createServer((req, res) => {
-  if (req.url.startsWith('/dav')) {
-    app(req, res);
-  } else {
-    const host = req.headers.host?.split(':')[0] || '127.0.0.1';
-    res.writeHead(301, { Location: `https://${host}:${HTTPS_PORT}${req.url}` });
-    res.end();
-  }
+  const host = req.headers.host?.split(':')[0] || '127.0.0.1';
+  res.writeHead(301, { Location: `https://${host}:${HTTPS_PORT}${req.url}` });
+  res.end();
 }).listen(PORT, '0.0.0.0', () => {
-  console.log(`Pi Storage HTTP  → http://0.0.0.0:${PORT} (/dav açık, diğerleri HTTPS redirect)`);
+  console.log(`Pi Storage HTTP  → http://0.0.0.0:${PORT} (→ HTTPS redirect)`);
 });
