@@ -82,15 +82,11 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
-// HTTP
 const PORT = parseInt(process.env.PORT) || 3001;
-http.createServer(app).listen(PORT, '0.0.0.0', () => {
-  console.log(`Pi Storage HTTP  → http://0.0.0.0:${PORT}`);
-});
-
-// HTTPS (sertifika varsa)
 const HTTPS_PORT = parseInt(process.env.HTTPS_PORT) || 3443;
 const KEY_PATH = '/data/certs/server.key';
+
+// HTTPS
 if (fs.existsSync(CERT_PATH) && fs.existsSync(KEY_PATH)) {
   https.createServer(
     { key: fs.readFileSync(KEY_PATH), cert: fs.readFileSync(CERT_PATH) },
@@ -99,3 +95,12 @@ if (fs.existsSync(CERT_PATH) && fs.existsSync(KEY_PATH)) {
     console.log(`Pi Storage HTTPS → https://0.0.0.0:${HTTPS_PORT}`);
   });
 }
+
+// HTTP → HTTPS redirect
+http.createServer((req, res) => {
+  const host = req.headers.host?.split(':')[0] || '127.0.0.1';
+  res.writeHead(301, { Location: `https://${host}:${HTTPS_PORT}${req.url}` });
+  res.end();
+}).listen(PORT, '0.0.0.0', () => {
+  console.log(`Pi Storage HTTP  → http://0.0.0.0:${PORT} (→ HTTPS redirect)`);
+});
