@@ -44,7 +44,7 @@ router.get('/list', auth, (req, res) => {
           return null;
         }
       })
-      .filter(Boolean)
+      .filter(item => item && !item.name.startsWith('.'))
       .sort((a, b) => {
         if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
         return a.name.localeCompare(b.name, 'tr');
