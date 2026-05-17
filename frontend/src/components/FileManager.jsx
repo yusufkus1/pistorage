@@ -4,6 +4,7 @@ import * as api from '../api';
 import Sidebar from './Sidebar';
 import FileGrid from './FileGrid';
 import Breadcrumb from './Breadcrumb';
+import PreviewModal from './PreviewModal';
 
 export default function FileManager() {
   const { logout } = useAuth();
@@ -16,6 +17,7 @@ export default function FileManager() {
   const [showMkdir, setShowMkdir] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [toast, setToast] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
   const draggingItem = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -161,8 +163,18 @@ export default function FileManager() {
           onMove={handleMove}
           onDelete={handleDelete}
           onDownload={api.downloadFile}
+          onPreview={setPreviewFile}
         />
       </div>
+
+      {/* Preview modal */}
+      {previewFile && (
+        <PreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+          onDownload={api.downloadFile}
+        />
+      )}
 
       {/* New folder modal */}
       {showMkdir && (

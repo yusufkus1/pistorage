@@ -13,6 +13,7 @@ export default function FileGrid({
   onMove,
   onDelete,
   onDownload,
+  onPreview,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounter = useRef(0);
@@ -130,6 +131,7 @@ export default function FileGrid({
               onDelete={onDelete}
               onDownload={onDownload}
               onUpload={onUpload}
+              onPreview={onPreview}
             />
           ))}
         </div>

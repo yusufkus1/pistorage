@@ -39,7 +39,7 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 }
 
-export default function FileItem({ file, draggingItem, onNavigate, onMove, onDelete, onDownload, onUpload }) {
+export default function FileItem({ file, draggingItem, onNavigate, onMove, onDelete, onDownload, onUpload, onPreview }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isHover, setIsHover] = useState(false);
   const { bg, color, label } = getTypeStyle(file.name, file.isDirectory);
@@ -78,12 +78,12 @@ export default function FileItem({ file, draggingItem, onNavigate, onMove, onDel
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onClick={() => file.isDirectory && onNavigate(file.path)}
+      onClick={() => file.isDirectory ? onNavigate(file.path) : onPreview && onPreview(file)}
       onMouseEnter={() => setIsHover(true)}
       onMouseLeave={() => setIsHover(false)}
       className={`flex items-center gap-3 px-4 py-2.5 select-none transition-colors duration-75 border-b border-slate-100 last:border-0 ${
         file.isDirectory ? 'cursor-pointer' : 'cursor-default'
-      } ${isDragOver ? 'bg-indigo-50' : isHover ? 'bg-slate-50' : 'bg-white'}`}
+      } ${isDragOver ? 'bg-indigo-50' : isHover ? 'bg-slate-50' : 'bg-white'} ${file.isDirectory ? 'cursor-pointer' : 'cursor-pointer'}`}
     >
       {/* Type badge */}
       <div
