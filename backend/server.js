@@ -16,26 +16,26 @@ const app = express();
 // WebDAV — bcrypt auth entegre edilmiş, Express middleware'ine bağımlı değil
 const STORAGE_ROOT = path.resolve(process.env.STORAGE_ROOT || './storage');
 
+const davUserManager = new webdav.SimpleUserManager();
+const davAdmin = davUserManager.addUser('pi', '', true);
+const davAnon  = davUserManager.addUser('anon', '', false);
+const davPrivileges = new webdav.SimplePathPrivilegeManager();
+davPrivileges.setRights(davAdmin, '/', ['all']);
+
 class BcryptHTTPAuth {
   askForAuthentication() {
     return { 'WWW-Authenticate': 'Basic realm="Pi Storage"' };
   }
-  getUser(ctx, userManager, callback) {
+  getUser(ctx, callback) {
     const header = ctx.request.headers['authorization'];
-    if (!header?.startsWith('Basic ')) {
-      return callback(null, userManager.getDefaultUser(false));
-    }
+    if (!header?.startsWith('Basic ')) return callback(null, davAnon);
     const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
     const password = decoded.slice(decoded.indexOf(':') + 1);
     bcrypt.compare(password, process.env.PASSWORD_HASH || '')
-      .then(valid => callback(null, userManager.getDefaultUser(valid)))
-      .catch(() => callback(null, userManager.getDefaultUser(false)));
+      .then(valid => callback(null, valid ? davAdmin : davAnon))
+      .catch(() => callback(null, davAnon));
   }
 }
-
-const davUserManager = new webdav.SimpleUserManager();
-const davPrivileges = new webdav.SimplePathPrivilegeManager();
-davPrivileges.setRights(davUserManager.getDefaultUser(true), '/', ['all']);
 
 const davServer = new webdav.WebDAVServer({
   requireAuthentification: true,
