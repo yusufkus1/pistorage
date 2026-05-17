@@ -13,14 +13,6 @@ const fileRoutes = require('./routes/files');
 
 const app = express();
 
-// Request logging — iOS WebDAV debug için
-app.use((req, res, next) => {
-  res.on('finish', () => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} → ${res.statusCode} | auth:${!!req.headers.authorization} | host:${req.headers.host}`);
-  });
-  next();
-});
-
 // WebDAV — bcrypt auth entegre edilmiş, Express middleware'ine bağımlı değil
 const STORAGE_ROOT = path.resolve(process.env.STORAGE_ROOT || './storage');
 
@@ -65,15 +57,6 @@ const davServer = new webdav.WebDAVServer({
   userManager: davUserManager,
 });
 davServer.setFileSystemSync('/', new webdav.PhysicalFileSystem(STORAGE_ROOT));
-
-// Root WebDAV isteklerini /dav'a yönlendir — URL'de /dav yazmak zorunda kalmasın
-const DAV_METHODS = new Set(['OPTIONS', 'PROPFIND', 'PROPPATCH', 'MKCOL', 'COPY', 'MOVE', 'DELETE', 'LOCK', 'UNLOCK', 'PUT']);
-app.use((req, res, next) => {
-  if (DAV_METHODS.has(req.method) && (req.path === '/' || req.path === '')) {
-    req.url = '/dav/';
-  }
-  next();
-});
 
 // WebDAV middleware — HTTPS üzerinden gelince href'lerdeki http:// → https:// yap
 const davMiddleware = webdav.extensions.express('/dav', davServer);
