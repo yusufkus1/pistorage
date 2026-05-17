@@ -13,28 +13,38 @@ const fileRoutes = require('./routes/files');
 
 const app = express();
 
-// WebDAV — mounts storage as a network drive at /dav
+// WebDAV — bcrypt auth entegre edilmiş, Express middleware'ine bağımlı değil
 const STORAGE_ROOT = path.resolve(process.env.STORAGE_ROOT || './storage');
-const davServer = new webdav.WebDAVServer({ requireAuthentification: false });
-davServer.setFileSystemSync('/', new webdav.PhysicalFileSystem(STORAGE_ROOT));
 
-async function davAuth(req, res, next) {
-  const header = req.headers['authorization'];
-  if (!header?.startsWith('Basic ')) {
-    res.set('WWW-Authenticate', 'Basic realm="Pi Storage"');
-    return res.status(401).end();
+class BcryptHTTPAuth {
+  askForAuthentication() {
+    return { 'WWW-Authenticate': 'Basic realm="Pi Storage"' };
   }
-  const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
-  const password = decoded.slice(decoded.indexOf(':') + 1);
-  const valid = await bcrypt.compare(password, process.env.PASSWORD_HASH || '');
-  if (!valid) {
-    res.set('WWW-Authenticate', 'Basic realm="Pi Storage"');
-    return res.status(401).end();
+  getUser(ctx, userManager, callback) {
+    const header = ctx.request.headers['authorization'];
+    if (!header?.startsWith('Basic ')) {
+      return callback(null, userManager.getDefaultUser(false));
+    }
+    const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+    const password = decoded.slice(decoded.indexOf(':') + 1);
+    bcrypt.compare(password, process.env.PASSWORD_HASH || '')
+      .then(valid => callback(null, userManager.getDefaultUser(valid)))
+      .catch(() => callback(null, userManager.getDefaultUser(false)));
   }
-  next();
 }
 
-app.use('/dav', davAuth);
+const davUserManager = new webdav.SimpleUserManager();
+const davPrivileges = new webdav.SimplePathPrivilegeManager();
+davPrivileges.setRights(davUserManager.getDefaultUser(true), '/', ['all']);
+
+const davServer = new webdav.WebDAVServer({
+  requireAuthentification: true,
+  httpAuthentication: new BcryptHTTPAuth(),
+  privilegeManager: davPrivileges,
+  userManager: davUserManager,
+});
+davServer.setFileSystemSync('/', new webdav.PhysicalFileSystem(STORAGE_ROOT));
+
 app.use(webdav.extensions.express('/dav', davServer));
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
